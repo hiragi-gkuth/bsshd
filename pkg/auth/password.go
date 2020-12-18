@@ -25,29 +25,30 @@ func Password(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) 
 	key := conn.RemoteAddr().String()
 	authInfo := ids.KVS[key]
 	authInfo.Passwords = append(authInfo.Passwords, string(password))
-	ids.KVS[key] = authInfo
 
 	// authentication
 	users := fetchUserList()
 	passwdHash, ok := users[conn.User()]
 	if !ok { // user not exists
-		return nil, PasswordAuthenticationError{
-			password: string(password),
-			user:     conn.User(),
-		}
+		goto failure
 	}
 	if !verify(passwdHash, password) { // incorrect password
-		return nil, PasswordAuthenticationError{
-			password: string(password),
-			user:     conn.User(),
-		}
+		goto failure
 	}
+	goto success
 
-	// success!
-	authInfo.Success = true
+success: // if authentication success
+	authInfo.Results = append(authInfo.Results, "Success")
 	ids.KVS[key] = authInfo
-
 	return &ssh.Permissions{}, nil
+
+failure: // if authentication failed
+	authInfo.Results = append(authInfo.Results, "Failure")
+	ids.KVS[key] = authInfo
+	return nil, PasswordAuthenticationError{
+		password: string(password),
+		user:     conn.User(),
+	}
 }
 
 type authuser map[string]string

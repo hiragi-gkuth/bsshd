@@ -28,6 +28,7 @@ func Log(conn ssh.ConnMetadata, method string, e error) {
 		now := time.Now()
 		authInfo := ids.KVS[key]
 		authInfo.AuthAts = append(authInfo.AuthAts, &now)
+		authInfo.AttemptCount++
 		authInfo.SSHConnMeta = conn
 		ids.KVS[key] = authInfo
 	}

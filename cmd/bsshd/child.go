@@ -10,12 +10,13 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func sshdChild(conn net.Conn, config *ssh.ServerConfig) {
+func sshdChild(conn net.Conn, config *ssh.ServerConfig, logger ids.BitrisAuthLogger) {
 	sessionKey := conn.RemoteAddr().String()
 	sshConn, chans, reqs, e := ssh.NewServerConn(conn, config)
 
 	authInfo := ids.KVS[sessionKey]
-	authInfo.ShowLogs()
+
+	logger.Send(authInfo)
 	if e != nil {
 		log.Println("establish failed: ", e)
 		return

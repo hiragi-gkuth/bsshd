@@ -11,11 +11,12 @@ import (
 
 // AuthInfo は，認証情報を含む
 type AuthInfo struct {
-	SSHConnMeta ssh.ConnMetadata
-	AuthAts     []*time.Time
-	Passwords   []string
-	Success     bool
-	RTT         *time.Duration
+	SSHConnMeta  ssh.ConnMetadata
+	AttemptCount int
+	AuthAts      []*time.Time
+	Passwords    []string
+	Results      []string
+	RTT          *time.Duration
 }
 
 // AuthTimes は，認証試行の結果から，認証時間のリストを返す．
@@ -37,9 +38,9 @@ func (ai AuthInfo) ShowLogs() {
 		IP: %v
 		User: %v
 		Passwords: %v
-		AuthTimes: %v
-		Success: %v
-		AuthAt: %v`,
+		AuthAts: %v
+		Results: %v
+		AuthTimes: %v`,
 		hex.EncodeToString(ai.SSHConnMeta.SessionID()),
 		string(ai.SSHConnMeta.ClientVersion()),
 		string(ai.SSHConnMeta.ServerVersion()),
@@ -47,7 +48,7 @@ func (ai AuthInfo) ShowLogs() {
 		ai.SSHConnMeta.User(),
 		ai.Passwords,
 		ai.AuthAts[len(ai.AuthAts)-1],
-		ai.Success,
+		ai.Results,
 		ai.AuthTimes(),
 	)
 }

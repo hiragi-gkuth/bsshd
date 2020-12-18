@@ -13,10 +13,10 @@ func Banner(conn ssh.ConnMetadata) string {
 	log.Println("Banner callback")
 	// Bannar は，接続確立，鍵交換後の次に呼ばれるので，idsのKVSを初期化しておく
 	ids.KVS[conn.RemoteAddr().String()] = ids.AuthInfo{
-		SSHConnMeta: conn,
-		AuthAts:     []*time.Time{},
-		Success:     false,
-		RTT:         nil,
+		SSHConnMeta:  conn,
+		AuthAts:      []*time.Time{},
+		AttemptCount: 0,
+		RTT:          nil,
 	}
 	return "banner"
 }

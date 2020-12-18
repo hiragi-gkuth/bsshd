@@ -21,11 +21,14 @@ func main() {
 	// configure bsshd
 	bsshdConfig := config.NewServerConfig("assets/keys/host_ecdsa_key")
 
-	// setup sshd child process manager
-	procMgr := NewProcManager(64, bsshdConfig)
-
-	// initial kvs
+	// initialize kvs
 	ids.InitKVS()
+
+	// initialize bitris logger
+	logger := ids.NewBitrisAuthLogger("bsshd", "0.0.0.0", 24224)
+
+	// setup sshd child process manager
+	procMgr := NewProcManager(64, bsshdConfig, logger)
 
 	// main server accept loop
 	for {
@@ -37,6 +40,6 @@ func main() {
 		}
 		// accept connection
 		log.Printf("accept new connection from %v\n", conn.RemoteAddr().String())
-		procMgr.AddConn(conn, bsshdConfig)
+		procMgr.AddConn(conn)
 	}
 }
