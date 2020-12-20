@@ -13,7 +13,7 @@ func NewServerConfig(hostKeyPath string) *ssh.ServerConfig {
 	config := &ssh.ServerConfig{
 		Config:            common,
 		ServerVersion:     "SSH-2.0-OpenSSH_8.2p1",
-		MaxAuthTries:      3,
+		MaxAuthTries:      6,
 		BannerCallback:    auth.Banner,
 		PasswordCallback:  auth.Password,
 		PublicKeyCallback: auth.PublicKey,

@@ -77,5 +77,5 @@ func verify(hashedPassword string, plainPassword []byte) bool {
 }
 
 func (pae PasswordAuthenticationError) Error() string {
-	return fmt.Sprintf("Failed login for %v using %v\n", pae.user, pae.password)
+	return fmt.Sprintf("Failed login for %v using %v", pae.user, pae.password)
 }

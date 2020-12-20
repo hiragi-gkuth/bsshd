@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"log"
 	"net"
+	"time"
 
 	"github.com/hiragi-gkuth/bsshd/pkg/channel"
 	"github.com/hiragi-gkuth/bsshd/pkg/ids"
@@ -11,13 +12,17 @@ import (
 )
 
 func sshdChild(conn net.Conn, config *ssh.ServerConfig, logger ids.BitrisAuthLogger) {
-	sessionKey := conn.RemoteAddr().String()
+	key := conn.RemoteAddr().String()
+	// RTT計測のため，SSHコネクション確立前に，時間を保存しておく
+	authInfo := ids.NewAuthInfo()
+	authInfo.BeforeEstablishAt = time.Now()
+	ids.KVS[key] = authInfo
+	// SSHセッションの確立を試みる
 	sshConn, chans, reqs, e := ssh.NewServerConn(conn, config)
-
-	authInfo := ids.KVS[sessionKey]
-
+	authInfo = ids.KVS[key]
+	authInfo.ShowLogs()
 	logger.Send(authInfo)
-	if e != nil {
+	if e != nil { // 失敗したら終了
 		log.Println("establish failed: ", e)
 		return
 	}

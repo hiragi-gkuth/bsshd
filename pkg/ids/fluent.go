@@ -46,11 +46,11 @@ func (bal BitrisAuthLog) Send(ai AuthInfo) {
 		sessionID = hex.EncodeToString(ai.SSHConnMeta.SessionID())
 		clientVer = string(ai.SSHConnMeta.ClientVersion())
 		ip        = strings.Split(ai.SSHConnMeta.RemoteAddr().String(), ":")[0]
-		rtt       = "0.0"
+		rtt       = ai.InitialTime()
 	)
 
 	for i := 0; i < ai.AttemptCount; i++ {
-		var ( // user, password は，任意の文字列が含まれて，フォーマットが壊される可能性があるため，hexに変換
+		var ( // user, password は，任意の文字列が含まれ，フォーマットが壊される可能性があるため，hexに変換
 			userHex     = hex.EncodeToString([]byte(ai.SSHConnMeta.User()))
 			passwordHex = hex.EncodeToString([]byte(ai.Passwords[i]))
 			result      = ai.Results[i]
@@ -60,14 +60,14 @@ func (bal BitrisAuthLog) Send(ai AuthInfo) {
 
 		// send data
 		message := map[string]string{
-			"server_id": "bsshd",
+			"server_id": bal.ServerID,
 			"sessionid": sessionID,
 			"clientver": clientVer,
 			"ip":        ip,
 			"user":      userHex,
 			"password":  passwordHex,
 			"result":    result,
-			"rtt":       rtt,
+			"rtt":       fmt.Sprint(rtt),
 			"authtime":  fmt.Sprint(authtime),
 			"unixtime":  fmt.Sprint(authAt.Unix()),
 			"usec":      fmt.Sprint(authAt.Nanosecond() / 1000),

@@ -10,7 +10,6 @@ import (
 
 // Log は，認証試行が行われたときに呼ばれる関数
 func Log(conn ssh.ConnMetadata, method string, e error) {
-	log.Println("Log callback")
 	log.Printf("Login attempt by %v using %s\n", conn.User(), method)
 
 	key := conn.RemoteAddr().String()
@@ -19,21 +18,19 @@ func Log(conn ssh.ConnMetadata, method string, e error) {
 		if authInfo, ok := ids.KVS[key]; !ok {
 			log.Fatal("ids session kvs must not be nil.")
 		} else {
-			now := time.Now()
-			authInfo.AuthAts = append(authInfo.AuthAts, &now)
+			authInfo.AuthAts = append(authInfo.AuthAts, time.Now())
 			authInfo.SSHConnMeta = conn
 			ids.KVS[key] = authInfo
 		}
 	case "password": // when password
-		now := time.Now()
 		authInfo := ids.KVS[key]
-		authInfo.AuthAts = append(authInfo.AuthAts, &now)
+		authInfo.AuthAts = append(authInfo.AuthAts, time.Now())
 		authInfo.AttemptCount++
 		authInfo.SSHConnMeta = conn
 		ids.KVS[key] = authInfo
 	}
 
 	if e != nil {
-		log.Println("  failed for reason: ", e)
+		log.Print("  failed for reason: ", e)
 	}
 }
