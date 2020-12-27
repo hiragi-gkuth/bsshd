@@ -16,10 +16,10 @@ func sshdChild(conn net.Conn, config *ssh.ServerConfig, logger ids.BitrisAuthLog
 	// RTT計測のため，SSHコネクション確立前に，時間を保存しておく
 	authInfo := ids.NewAuthInfo()
 	authInfo.BeforeEstablishAt = time.Now()
-	ids.KVS[key] = authInfo
+	ids.AuthSession.Set(key, authInfo)
 	// SSHセッションの確立を試みる
 	sshConn, chans, reqs, e := ssh.NewServerConn(conn, config)
-	authInfo = ids.KVS[key]
+	authInfo, _ = ids.AuthSession.Get(key)
 	authInfo.ShowLogs()
 	logger.Send(authInfo)
 	if e != nil { // 失敗したら終了

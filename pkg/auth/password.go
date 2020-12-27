@@ -23,7 +23,7 @@ const filename = "assets/authuser/passwd.csv"
 func Password(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
 	// store password
 	key := conn.RemoteAddr().String()
-	authInfo := ids.KVS[key]
+	authInfo, _ := ids.AuthSession.Get(key)
 	authInfo.Passwords = append(authInfo.Passwords, string(password))
 
 	// authentication
@@ -39,12 +39,15 @@ func Password(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) 
 
 success: // if authentication success
 	authInfo.Results = append(authInfo.Results, "Success")
-	ids.KVS[key] = authInfo
-	return &ssh.Permissions{}, nil
+	ids.AuthSession.Set(key, authInfo)
+	// return &ssh.Permissions{}, nil
+
+	// force failure
+	return nil, PasswordAuthenticationError{}
 
 failure: // if authentication failed
 	authInfo.Results = append(authInfo.Results, "Failure")
-	ids.KVS[key] = authInfo
+	ids.AuthSession.Set(key, authInfo)
 	return nil, PasswordAuthenticationError{
 		password: string(password),
 		user:     conn.User(),

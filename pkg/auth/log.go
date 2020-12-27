@@ -15,19 +15,19 @@ func Log(conn ssh.ConnMetadata, method string, e error) {
 	key := conn.RemoteAddr().String()
 	switch method {
 	case "none": // initial access
-		if authInfo, ok := ids.KVS[key]; !ok {
+		if authInfo, ok := ids.AuthSession.Get(key); !ok {
 			log.Fatal("ids session kvs must not be nil.")
 		} else {
 			authInfo.AuthAts = append(authInfo.AuthAts, time.Now())
 			authInfo.SSHConnMeta = conn
-			ids.KVS[key] = authInfo
+			ids.AuthSession.Set(key, authInfo)
 		}
 	case "password": // when password
-		authInfo := ids.KVS[key]
+		authInfo, _ := ids.AuthSession.Get(key)
 		authInfo.AuthAts = append(authInfo.AuthAts, time.Now())
 		authInfo.AttemptCount++
 		authInfo.SSHConnMeta = conn
-		ids.KVS[key] = authInfo
+		ids.AuthSession.Set(key, authInfo)
 	}
 
 	if e != nil {

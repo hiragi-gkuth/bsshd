@@ -11,9 +11,9 @@ import (
 func Banner(conn ssh.ConnMetadata) string {
 	key := conn.RemoteAddr().String()
 	// Bannar は，接続確立，鍵交換後の次に呼ばれるので，idsのKVSを初期化しておく
-	authInfo := ids.KVS[key]
+	authInfo, _ := ids.AuthSession.Get(key)
 	authInfo.AfterEstablishAt = time.Now()
 	authInfo.SSHConnMeta = conn
-	ids.KVS[key] = authInfo
-	return key
+	ids.AuthSession.Set(key, authInfo)
+	return ""
 }
