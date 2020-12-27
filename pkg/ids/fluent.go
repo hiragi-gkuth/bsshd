@@ -46,7 +46,7 @@ func (bal BitrisAuthLog) Send(ai AuthInfo) {
 		sessionID = hex.EncodeToString(ai.SSHConnMeta.SessionID())
 		clientVer = string(ai.SSHConnMeta.ClientVersion())
 		ip        = strings.Split(ai.SSHConnMeta.RemoteAddr().String(), ":")[0]
-		rtt       = ai.InitialTime()
+		rtt       = ai.InitialTime().Seconds()
 	)
 
 	for i := 0; i < ai.AttemptCount; i++ {
@@ -71,6 +71,7 @@ func (bal BitrisAuthLog) Send(ai AuthInfo) {
 			"authtime":  fmt.Sprint(authtime),
 			"unixtime":  fmt.Sprint(authAt.Unix()),
 			"usec":      fmt.Sprint(authAt.Nanosecond() / 1000),
+			"trycount":  fmt.Sprint(i + 1),
 		}
 		hostname, _ := os.Hostname()
 		tag := hostname + ".auth.info"
