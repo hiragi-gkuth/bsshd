@@ -4,6 +4,7 @@ package ids
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -64,6 +65,10 @@ func (ai AuthInfo) InitialTime() time.Duration {
 
 // ShowLogs は，AuthInfoをもとにログを出力する
 func (ai AuthInfo) ShowLogs() {
+	if ai.SSHConnMeta == nil {
+		log.Print("unable to show logs because SSH connection is closed by client")
+		return
+	}
 	fmt.Printf(
 		`ID: %v
 Ver: %v
