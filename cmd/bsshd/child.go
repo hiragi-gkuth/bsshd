@@ -12,14 +12,15 @@ import (
 )
 
 func sshdChild(conn net.Conn, config *ssh.ServerConfig, logger ids.BitrisAuthLogger) {
+	authSession := ids.GetAuthSession()
 	key := conn.RemoteAddr().String()
 	// RTT計測のため，SSHコネクション確立前に，時間を保存しておく
 	authInfo := ids.NewAuthInfo()
 	authInfo.BeforeEstablishAt = time.Now()
-	ids.AuthSession.Set(key, authInfo)
+	authSession.Set(key, authInfo)
 	// SSHセッションの確立を試みる
 	sshConn, chans, reqs, e := ssh.NewServerConn(conn, config)
-	authInfo, _ = ids.AuthSession.Get(key)
+	authInfo, _ = authSession.Get(key)
 	authInfo.ShowLogs()
 	logger.Send(authInfo)
 	if e != nil { // 失敗したら終了

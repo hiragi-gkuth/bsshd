@@ -37,9 +37,6 @@ func main() {
 	// configure bsshd
 	bsshdConfig := config.NewServerConfig(*hostKeyFile)
 
-	// initialize kvs
-	ids.InitKVS()
-
 	// initialize bitris logger
 	logger := ids.NewBitrisAuthLogger(*logServerID, *logHost, *logPort)
 

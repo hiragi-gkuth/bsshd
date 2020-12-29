@@ -22,8 +22,9 @@ const filename = "assets/authuser/passwd.csv"
 // Password はパスワード認証時に呼び出され，認証を行う関数
 func Password(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
 	// store password
+	authSession := ids.GetAuthSession()
 	key := conn.RemoteAddr().String()
-	authInfo, _ := ids.AuthSession.Get(key)
+	authInfo, _ := authSession.Get(key)
 	authInfo.Passwords = append(authInfo.Passwords, string(password))
 
 	// authentication
@@ -39,7 +40,7 @@ func Password(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) 
 
 success: // if authentication success
 	authInfo.Results = append(authInfo.Results, "Success")
-	ids.AuthSession.Set(key, authInfo)
+	authSession.Set(key, authInfo)
 	// return &ssh.Permissions{}, nil
 
 	// force failure
@@ -47,7 +48,7 @@ success: // if authentication success
 
 failure: // if authentication failed
 	authInfo.Results = append(authInfo.Results, "Failure")
-	ids.AuthSession.Set(key, authInfo)
+	authSession.Set(key, authInfo)
 	return nil, PasswordAuthenticationError{
 		password: string(password),
 		user:     conn.User(),

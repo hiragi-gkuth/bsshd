@@ -9,11 +9,12 @@ import (
 
 // Banner は，認証前に呼び出される関数
 func Banner(conn ssh.ConnMetadata) string {
+	authSession := ids.GetAuthSession()
 	key := conn.RemoteAddr().String()
 	// Bannar は，接続確立，鍵交換後の次に呼ばれるので，idsのKVSを初期化しておく
-	authInfo, _ := ids.AuthSession.Get(key)
+	authInfo, _ := authSession.Get(key)
 	authInfo.AfterEstablishAt = time.Now()
 	authInfo.SSHConnMeta = conn
-	ids.AuthSession.Set(key, authInfo)
+	authSession.Set(key, authInfo)
 	return ""
 }
