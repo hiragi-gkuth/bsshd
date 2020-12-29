@@ -18,7 +18,7 @@ func main() {
 		port        = flag.Int("p", 22, "sshdが待機するポートを指定します")
 		bindAddr    = flag.String("a", "0.0.0.0", "サーバがバインドするアドレスを指定します")
 		logServerID = flag.String("li", "bsshd", "fluentに知らせるサーバIDを指定します")
-		logHost     = flag.String("lh", "0.0.0.0", "fluentのサーバホストを指定します")
+		logHost     = flag.String("lh", "", "fluentのサーバホストを指定します")
 		logPort     = flag.Int("lp", 24224, "fluentのサーバポートを指定します")
 		// ipsMode     = flag.Bool("ips", false, "IPS(侵入検知システム)を有効化します")
 		// idsMode     = flag.Bool("ids", false, "IDS(侵入防止システム)を有効化します")
@@ -38,7 +38,12 @@ func main() {
 	bsshdConfig := config.NewServerConfig(*hostKeyFile)
 
 	// initialize bitris logger
-	logger := ids.NewBitrisAuthLogger(*logServerID, *logHost, *logPort)
+	var logger ids.BitrisAuthLogger = nil
+	if *logHost != "" {
+		logger = ids.NewBitrisAuthLogger(*logServerID, *logHost, *logPort)
+	} else {
+		log.Print("Launch bsshd without logging")
+	}
 
 	// setup sshd child process manager
 	procMgr := NewProcManager(64, bsshdConfig, logger)

@@ -34,7 +34,7 @@ func NewBitrisAuthLogger(serverID, host string, port int) BitrisAuthLogger {
 		return nil
 	}
 
-	return BitrisAuthLog{
+	return &BitrisAuthLog{
 		f:        f,
 		ServerID: serverID,
 	}

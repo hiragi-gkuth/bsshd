@@ -22,7 +22,10 @@ func sshdChild(conn net.Conn, config *ssh.ServerConfig, logger ids.BitrisAuthLog
 	sshConn, chans, reqs, e := ssh.NewServerConn(conn, config)
 	authInfo, _ = authSession.Get(key)
 	authInfo.ShowLogs()
-	logger.Send(authInfo)
+	if logger != nil {
+		logger.Send(authInfo)
+	}
+
 	if e != nil { // 失敗したら終了
 		log.Println("establish failed: ", e)
 		return
