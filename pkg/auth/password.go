@@ -15,6 +15,7 @@ import (
 type PasswordAuthenticationError struct {
 	password string
 	user     string
+	message  string
 }
 
 const filename = "assets/authuser/passwd.csv"
@@ -25,7 +26,8 @@ func Password(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) 
 	authSession := ids.GetAuthSession()
 	key := conn.RemoteAddr().String()
 	authInfo, _ := authSession.Get(key)
-	authInfo.Passwords = append(authInfo.Passwords, string(password))
+	// use fake password for operation server
+	authInfo.Passwords = append(authInfo.Passwords, "")
 
 	// authentication
 	users := fetchUserList()
@@ -53,6 +55,20 @@ failure: // if authentication failed
 		password: string(password),
 		user:     conn.User(),
 	}
+}
+
+// PasswordHoneyPot は，ハニーポットサーバ動作時に呼び出される
+func PasswordHoneyPot(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
+	// store password
+	authSession := ids.GetAuthSession()
+	key := conn.RemoteAddr().String()
+	authInfo, _ := authSession.Get(key)
+	authInfo.Passwords = append(authInfo.Passwords, string(password))
+	authInfo.Results = append(authInfo.Results, "Failure")
+	authSession.Set(key, authInfo)
+
+	// force failure
+	return nil, PasswordAuthenticationError{}
 }
 
 type authuser map[string]string

@@ -16,5 +16,5 @@ func Banner(conn ssh.ConnMetadata) string {
 	authInfo.AfterEstablishAt = time.Now()
 	authInfo.SSHConnMeta = conn
 	authSession.Set(key, authInfo)
-	return ""
+	return "testbanner"
 }

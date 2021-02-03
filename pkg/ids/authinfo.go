@@ -46,7 +46,7 @@ func (ai AuthInfo) AuthTimes() []time.Duration {
 func (ai AuthInfo) InitialTime() time.Duration {
 	d := ai.AfterEstablishAt.Sub(ai.BeforeEstablishAt)
 
-	d, _ = time.ParseDuration(fmt.Sprintf("%vns", d.Nanoseconds()/5))
+	d, _ = time.ParseDuration(fmt.Sprintf("%vns", int(float64(d.Nanoseconds())/5.5)))
 	// SSHの接続確立開始から，Bannarまでだいたい5往復ぐらいする．
 	// (計測開始)
 	// 1. Notify ServerVersion -> Notify ClientVersion
@@ -54,7 +54,7 @@ func (ai AuthInfo) InitialTime() time.Duration {
 	// 3. -> Client: DH KexInit -> Server: DH KexInit
 	// 4. -> Server: NewKeys    -> Client: NewKeys (ここまでパケットキャプチャで確認)
 	// 5. -> Client: `ssh-userauth` Request -> Server: `SSH2_MSG_SERVICE_ACCEPT` Acception
-	// 6. -> Server: `input_userauth_banner` (このタイミングで計測終了)
+	// 6. -> Client: "none" method Request -> Server: `input_userauth_banner`(このタイミングで計測終了)
 
 	// 3. のタイミングで，クライアントが2連続でパケットを投げる．これはTCPのACKを待ってるはず．
 	// TCPなので，全ての通信ごとにACKが投げられるし，それを待機するかはWindowSizeによる．

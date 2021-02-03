@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"net"
 	"os"
-	"strings"
 
 	"github.com/fluent/fluent-logger-golang/fluent"
 )
@@ -42,16 +42,17 @@ func NewBitrisAuthLogger(serverID, host string, port int) BitrisAuthLogger {
 
 // Send は，認証情報をログに変換してDBサーバに送信する
 func (bal BitrisAuthLog) Send(ai AuthInfo) {
+	conn := ai.SSHConnMeta
 	var ( // Fluentdに送信するための，認証セッションごとに共通な変数を用意
-		sessionID = hex.EncodeToString(ai.SSHConnMeta.SessionID())
-		clientVer = string(ai.SSHConnMeta.ClientVersion())
-		ip        = strings.Split(ai.SSHConnMeta.RemoteAddr().String(), ":")[0]
-		rtt       = ai.InitialTime().Seconds()
+		sessionID   = hex.EncodeToString(conn.SessionID())
+		clientVer   = string(conn.ClientVersion())
+		ip, port, _ = net.SplitHostPort(conn.RemoteAddr().String())
+		rtt         = ai.InitialTime().Seconds()
 	)
 
 	for i := 0; i < ai.AttemptCount; i++ {
 		var ( // user, password は，任意の文字列が含まれ，フォーマットが壊される可能性があるため，hexに変換
-			userHex     = hex.EncodeToString([]byte(ai.SSHConnMeta.User()))
+			userHex     = hex.EncodeToString([]byte(conn.User()))
 			passwordHex = hex.EncodeToString([]byte(ai.Passwords[i]))
 			result      = ai.Results[i]
 			authtime    = ai.AuthTimes()[i].Seconds()
@@ -63,15 +64,15 @@ func (bal BitrisAuthLog) Send(ai AuthInfo) {
 			"server_id": bal.ServerID,
 			"sessionid": sessionID,
 			"clientver": clientVer,
-			"ip":        ip,
+			"result":    result,
 			"user":      userHex,
 			"password":  passwordHex,
-			"result":    result,
-			"rtt":       fmt.Sprint(rtt),
+			"ip":        ip,
+			"port":      port,
 			"authtime":  fmt.Sprint(authtime),
+			"rtt":       fmt.Sprint(rtt),
 			"unixtime":  fmt.Sprint(authAt.Unix()),
 			"usec":      fmt.Sprint(authAt.Nanosecond() / 1000),
-			"trycount":  fmt.Sprint(i + 1),
 		}
 		hostname, _ := os.Hostname()
 		tag := hostname + ".auth.info"

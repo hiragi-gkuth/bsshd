@@ -9,13 +9,21 @@ import (
 var common = ssh.Config{}
 
 // NewServerConfig は，bsshdのサーバ設定を行って，返します．
-func NewServerConfig(hostKeyPath string) *ssh.ServerConfig {
+func NewServerConfig(hostKeyPath string, honeypotMode bool) *ssh.ServerConfig {
+	var passwordAuthFunc func(ssh.ConnMetadata, []byte) (*ssh.Permissions, error)
+
+	if honeypotMode {
+		passwordAuthFunc = auth.PasswordHoneyPot
+	} else {
+		passwordAuthFunc = auth.Password
+	}
+
 	config := &ssh.ServerConfig{
 		Config:            common,
 		ServerVersion:     "SSH-2.0-OpenSSH_8.2p1",
 		MaxAuthTries:      6,
 		BannerCallback:    auth.Banner,
-		PasswordCallback:  auth.Password,
+		PasswordCallback:  passwordAuthFunc,
 		PublicKeyCallback: auth.PublicKey,
 		AuthLogCallback:   auth.Log,
 	}
