@@ -9,6 +9,14 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+// FetchIdsModel は検知モデルをDBから再取得します
+func FetchIdsModel() {
+	// TODO: impelement
+	log.Print("Fetching ids model...")
+	time.Sleep(3 * time.Second)
+	log.Print("done")
+}
+
 func fetchAnalysisResult(dbHost, serverID string) string {
 	config := mysql.NewConfig()
 
