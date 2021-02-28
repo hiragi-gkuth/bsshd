@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/hiragi-gkuth/bsshd/pkg/config"
 	"github.com/hiragi-gkuth/bsshd/pkg/ids"
@@ -16,47 +18,57 @@ func main() {
 		// debugMode   = flag.Bool("d", false, "デバッグモードを有効にします")
 		hostKeyFile  = flag.String("h", "assets/keys/host_ecdsa_key", "ホストキーを指定します")
 		port         = flag.Int("p", 22, "sshdが待機するポートを指定します")
-		bindAddr     = flag.String("a", "0.0.0.0", "サーバがバインドするアドレスを指定します")
+		addr         = flag.String("a", "0.0.0.0", "サーバがバインドするアドレスを指定します")
 		logServerID  = flag.String("li", "bsshd", "fluentに知らせるサーバIDを指定します")
 		logHost      = flag.String("lh", "", "fluentのサーバホストを指定します")
 		logPort      = flag.Int("lp", 24224, "fluentのサーバポートを指定します")
 		honeypotMode = flag.Bool("honeypot", false, "ハニーポットサーバとして起動します")
 	)
-
 	flag.Parse()
+	// consts
+	const MaxConn = 64
 
-	// listen server
-	listener, e := net.Listen("tcp", fmt.Sprintf("%s:%d", *bindAddr, *port))
-	if e != nil {
-		log.Fatal("failed to listen for connection: ", e)
-	}
-	log.Printf("bsshd is listening on %v", *port)
+	// chans
+	signalCh := make(chan os.Signal, 1)
+	killCh := make(chan os.Signal, 1)
+	term := make(chan os.Signal, 1)
+	connCh := make(chan net.Conn, MaxConn)
+
+	// listener
+	listener := setupServer(*addr, *port)
 	defer listener.Close()
+
+	// handlers
+	go sigusr1Handler(signalCh)
+	go killHandler(killCh)
+	go connHandler(listener, connCh)
 
 	// configure bsshd
 	bsshdConfig := config.NewServerConfig(*hostKeyFile, *honeypotMode)
 
-	// initialize bitris logger
-	var logger ids.BitrisAuthLogger = nil
-	if *logHost != "" {
-		logger = ids.NewBitrisAuthLogger(*logServerID, *logHost, *logPort)
-	} else {
-		log.Print("Launch bsshd without logging")
-	}
-
 	// setup sshd child process manager
-	procMgr := NewProcManager(64, bsshdConfig, logger)
+	procMgr := NewProcManager(MaxConn, bsshdConfig, *logServerID, *logHost, *logPort)
 
 	// main server accept loop
 	for {
-		// wait for connection
-		conn, e := listener.Accept()
-		if e != nil {
-			log.Fatalf("failed to accept tcp connection %v", e)
-			continue
+		select {
+		case conn := <-connCh:
+			log.Print("connChan")
+			procMgr.AddConn(conn)
+
+		case <-signalCh:
+			log.Print("sigusr1")
+			signal.Stop(signalCh)
+			ids.FetchIdsModel()
+			signal.Notify(signalCh, syscall.SIGUSR1)
+
+		case <-killCh:
+			log.Print("killAll")
+			procMgr.KillAll()
+			return
+
+		case <-term:
+			log.Print("term")
 		}
-		// accept connection
-		log.Printf("accept new connection from %v\n", conn.RemoteAddr().String())
-		procMgr.AddConn(conn)
 	}
 }

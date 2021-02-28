@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net"
 
 	"github.com/hiragi-gkuth/bsshd/pkg/ids"
@@ -15,7 +16,14 @@ type ProcMgr struct {
 }
 
 // NewProcManager は，新しいプロセスマネージャを返す
-func NewProcManager(maxConn int, sshdConfig *ssh.ServerConfig, logger ids.BitrisAuthLogger) *ProcMgr {
+func NewProcManager(maxConn int, sshdConfig *ssh.ServerConfig, serverID string, logHost string, logPort int) *ProcMgr {
+	// initialize bitris logger
+	var logger ids.BitrisAuthLogger = nil
+	if logHost != "" {
+		logger = ids.NewBitrisAuthLogger(serverID, logHost, logPort)
+	} else {
+		log.Print("Launch bsshd without logging")
+	}
 	return &ProcMgr{
 		MaxConn:    maxConn,
 		SshdConfig: sshdConfig,
