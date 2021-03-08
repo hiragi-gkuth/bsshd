@@ -13,6 +13,7 @@ type ProcMgr struct {
 	MaxConn    int
 	SshdConfig *ssh.ServerConfig
 	Logger     ids.BitrisAuthLogger
+	Conns      []net.Conn
 }
 
 // NewProcManager は，新しいプロセスマネージャを返す
@@ -32,14 +33,14 @@ func NewProcManager(maxConn int, sshdConfig *ssh.ServerConfig, serverID string, 
 }
 
 // AddConn は，新しいssh接続を追加する
-func (pm ProcMgr) AddConn(conn net.Conn) {
+func (pm *ProcMgr) AddConn(conn net.Conn) {
+	pm.Conns = append(pm.Conns, conn)
 	go sshdChild(conn, pm.SshdConfig, pm.Logger)
 }
 
 // KillAll は，今持ってる認証プロセスを強制的に全て殺す
 func (pm ProcMgr) KillAll() {
-}
-
-// Manage は，それぞれのsshdプロセスとの通信を行う
-func (pm ProcMgr) Manage() {
+	for _, conn := range pm.Conns {
+		conn.Close()
+	}
 }
