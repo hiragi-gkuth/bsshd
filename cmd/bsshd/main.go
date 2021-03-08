@@ -7,9 +7,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/hiragi-gkuth/bsshd/pkg/config"
 	"github.com/hiragi-gkuth/bsshd/pkg/ids"
+)
+
+const ( // 解析ソフトウェア側のパラメータ固定してる，許して
+	entirePeriod = 24 * time.Hour
+	divisions    = 24
+	subnetMask   = 16
 )
 
 func main() {
@@ -19,9 +26,12 @@ func main() {
 		hostKeyFile  = flag.String("h", "assets/keys/host_ecdsa_key", "ホストキーを指定します")
 		port         = flag.Int("p", 22, "sshdが待機するポートを指定します")
 		addr         = flag.String("a", "0.0.0.0", "サーバがバインドするアドレスを指定します")
-		logServerID  = flag.String("li", "bsshd", "fluentに知らせるサーバIDを指定します")
-		logHost      = flag.String("lh", "", "fluentのサーバホストを指定します")
-		logPort      = flag.Int("lp", 24224, "fluentのサーバポートを指定します")
+		logServerID  = flag.String("logID", "bsshd", "fluentに知らせるサーバIDを指定します")
+		logHost      = flag.String("logHost", "", "fluentのサーバホストを指定します")
+		logPort      = flag.Int("logPort", 24224, "fluentのサーバポートを指定します")
+		dbHost       = flag.String("dbHost", "0.0.0.0", "DBサーバホストを指定します")
+		dbUser       = flag.String("dbUser", "", "DBユーザを指定します")
+		dbPass       = flag.String("dbPass", "", "DBパスワードを指定します")
 		honeypotMode = flag.Bool("honeypot", false, "ハニーポットサーバとして起動します")
 	)
 	flag.Parse()
@@ -53,17 +63,17 @@ func main() {
 	for {
 		select {
 		case conn := <-connCh:
-			log.Print("connChan")
 			procMgr.AddConn(conn)
 
 		case <-signalCh:
-			log.Print("sigusr1")
+			log.Print("IDS model refetch signal received. fetching...")
 			signal.Stop(signalCh)
-			ids.FetchIdsModel()
+			ids.ReconstructIdsModel(*logServerID, *dbHost, *dbUser, *dbPass)
 			signal.Notify(signalCh, syscall.SIGUSR1)
+			log.Print("done.")
 
 		case <-killCh:
-			log.Print("killAll")
+			log.Print("exit")
 			procMgr.KillAll()
 			return
 
