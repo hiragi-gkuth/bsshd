@@ -59,6 +59,9 @@ func main() {
 	// setup sshd child process manager
 	procMgr := NewProcManager(MaxConn, bsshdConfig, *logServerID, *logHost, *logPort)
 
+	// Initialize Ids Model
+	ids.InitModel(subnetMask, entirePeriod, divisions)
+
 	// main server accept loop
 	for {
 		select {

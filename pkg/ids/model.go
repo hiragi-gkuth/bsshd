@@ -10,7 +10,7 @@ import (
 
 // ModelData は，検知モデルデータ
 type ModelData struct {
-	*sync.RWMutex
+	sync.RWMutex
 	th           *threshold.Threshold
 	mask         int
 	entirePeriod time.Duration
@@ -26,12 +26,16 @@ func InitModel(subnetMask int, entirePeriod time.Duration, divisions int) {
 		return
 	}
 	m = NewModel(subnetMask, entirePeriod, divisions)
+
 }
 
 // NewModel は空の新しい見地モデルを返す
 func NewModel(subnetMask int, entirePeriod time.Duration, divisions int) *ModelData {
+	// 初期はハードコーディングしておく
+	th := threshold.New(subnetMask, entirePeriod, divisions)
+	th.BaseThreshold = 1.0
 	return &ModelData{
-		th:           threshold.New(16, 24*time.Hour, 24),
+		th:           th,
 		mask:         subnetMask,
 		entirePeriod: entirePeriod,
 		divisions:    divisions,

@@ -4,7 +4,10 @@ package auth
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net"
 	"strings"
+	"time"
 
 	"github.com/hiragi-gkuth/bsshd/pkg/ids"
 	"golang.org/x/crypto/bcrypt"
@@ -29,9 +32,21 @@ func Password(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) 
 	// use fake password for operation server
 	authInfo.Passwords = append(authInfo.Passwords, "")
 
+	// Judge by IDS model of this bitris system
+
+	prev := authInfo.AuthAts[len(authInfo.AuthAts)-1] // 一つ前の認証時刻取得
+	authtime := time.Since(prev)                      // 前回からの時間の差（＝認証時間）
+	log.Printf("authtime: %v", authtime)
+	acceptable := judgeMalcious(authInfo.SSHConnMeta.RemoteAddr().(*net.TCPAddr).IP, authtime.Seconds())
+	log.Printf("acceptable: %v", acceptable)
+
 	// authentication
 	users := fetchUserList()
 	passwdHash, ok := users[conn.User()]
+
+	if !acceptable { // a attempt detected as attack
+		goto failure
+	}
 	if !ok { // user not exists
 		goto failure
 	}
@@ -98,4 +113,12 @@ func verify(hashedPassword string, plainPassword []byte) bool {
 
 func (pae PasswordAuthenticationError) Error() string {
 	return fmt.Sprintf("Failed login for %v using %v", pae.user, pae.password)
+}
+
+// 認証試行の悪性を判断する
+func judgeMalcious(ip net.IP, authtime float64) bool {
+	model := ids.GetModel()
+	threshold := model.Search(ip)
+
+	return authtime > threshold
 }
